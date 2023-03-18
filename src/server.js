@@ -10,30 +10,30 @@ class Server {
 
     generateRoutes() {
         return {
-            '/healthy': (req, resp) => {
+            '/healthy:get': (req, resp) => {
                 resp.writeHead(200);
                 resp.write('Ok');
                 resp.end();
             },
-            '/cpf': (req, resp, queryParam) => {
+            '/cpf:get': (req, resp, queryParam) => {
                 resp.writeHead(200);
                 const cpf = this.#cpfService.generate(queryParam.get('isFormated'));
                 resp.write(cpf);
                 resp.end();
             },
-            '/cpf/valid': (req, resp, queryParam) => {
+            '/cpf/valid:get': (req, resp, queryParam) => {
                 resp.writeHead(200);
                 const isValid = this.#cpfService.valid(queryParam.get('cpf'));
                 resp.write(JSON.stringify(isValid));
                 resp.end();
             },
-            '/cnpj': (req, resp, queryParam) => {
+            '/cnpj:get': (req, resp, queryParam) => {
                 resp.writeHead(200);
                 const cnpj = this.#cnpjService.generate(queryParam.get('isFormated'));
                 resp.write(cnpj);
                 resp.end();
             },
-            '/cnpj/valid': (req, resp, queryParam) => {
+            '/cnpj/valid:get': (req, resp, queryParam) => {
                 resp.writeHead(200);
                 const isValid = this.#cnpjService.valid(queryParam.get('cnpj'));
                 resp.write(JSON.stringify(isValid));
@@ -47,12 +47,21 @@ class Server {
     }
 
     handler(req, resp) {
-        const { url } = req;
+        const { url, method } = req;        
+        const chosen = this.getChosenRoute(url, method);
+        const queryParams = this.getQueryParams(url);
+
+        chosen(req, resp, queryParams);
+    }
+
+    getChosenRoute(url, method) {
         const routes = this.generateRoutes();
         const urlFormated = url.split('?')[0].toLocaleLowerCase();
-        const chosen = routes[urlFormated] ?? routes.default;
-        const queryParams = this.getQueryParams(url);
-        chosen(req, resp, queryParams);
+        const methodFormated = method.toLocaleLowerCase();
+        const mUrl = `${urlFormated}:${methodFormated}`;
+        const chosen = routes[mUrl] ?? routes.default;
+
+        return chosen;
     }
 
     getQueryParams(url) {
